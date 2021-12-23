@@ -116,21 +116,21 @@ void Camera::keyboard(int key, int action, int mode)
 {
 	if (key == GLFW_KEY_U && action == GLFW_PRESS && mode == 0x0000)
 	{
-		rotateAngle += 5.0;
+		rotateAngle += 10.0;
 	}
 	else if (key == GLFW_KEY_U && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT)
 	{
-		rotateAngle -= 5.0;
+		rotateAngle -= 10.0;
 	}
 	else if (key == GLFW_KEY_I && action == GLFW_PRESS && mode == 0x0000)
 	{
-		upAngle += 5.0;
+		upAngle += 10.0;
 		if (upAngle > 180)
 			upAngle = 180;
 	}
 	else if (key == GLFW_KEY_I && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT)
 	{
-		upAngle -= 5.0;
+		upAngle -= 10.0;
 		if (upAngle < -180)
 			upAngle = -180;
 	}

@@ -1,4 +1,4 @@
-﻿#include "Angel.h"
+#include "Angel.h"
 #include "TriMesh.h"
 #include "Camera.h"
 #include "MeshPainter.h"
@@ -47,6 +47,13 @@ void init()
 	table->setTranslation(glm::vec3(-0.5, 0.0, 0.0));
 	table->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	table->setScale(glm::vec3(1.0, 1.0, 1.0));
+
+	// 设置材质
+	table->setAmbient(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 环境光
+	table->setDiffuse(glm::vec4(0.7, 0.7, 0.7, 1.0)); // 漫反射
+	table->setSpecular(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 镜面反射
+	table->setShininess(1.0); //高光系数
+
 	// 加到painter中
 	painter->addMesh(table, "table_a", "./assets/table.png", vshader, fshader); 	// 指定纹理与着色器
 
@@ -59,6 +66,13 @@ void init()
 	wawa->setTranslation(glm::vec3(0.5, 0.0, 0.0));
 	wawa->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	wawa->setScale(glm::vec3(1.0, 1.0, 1.0));
+
+	//设置brass材质
+	wawa->setAmbient(glm::vec4(0.329412f, 0.223529f, 0.027451f,1.0f)); // 环境光
+	wawa->setDiffuse(glm::vec4(0.780392f, 0.568627f, 0.113725f, 1.0f)); // 漫反射
+	wawa->setSpecular(glm::vec4(0.992157f, 0.941176f, 0.807843f, 1.0f)); // 镜面反射
+	wawa->setShininess(27.8974f); //高光系数
+
 	// 加到painter中
 	painter->addMesh(wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
 
@@ -120,6 +134,29 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+// 鼠标设置光源x,y位置
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		double x, y;
+		glfwGetCursorPos(window, &x, &y);
+
+		float half_winx = WIDTH / 2.0;
+		float half_winy = HEIGHT / 2.0;
+		float lx = float(x - half_winx) / half_winx;
+		float ly = float(HEIGHT - y - half_winy) / half_winy;
+
+		glm::vec3 pos = light->getTranslation();
+
+		pos.x = lx;
+		pos.y = ly;
+
+		light->setTranslation(pos);
+	}
+}
+
+
 void cleanData() {
 	// 释放内存
 
@@ -157,7 +194,7 @@ int main(int argc, char** argv)
 #endif
 
 	// 配置窗口属性
-	GLFWwindow* window = glfwCreateWindow(600, 600, "2019152091_陆和淇_实验四", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(600, 600, "2019152091陆和淇期末大作业", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -167,6 +204,7 @@ int main(int argc, char** argv)
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	// 调用任何OpenGL的函数之前初始化GLAD
 	// ---------------------------------------
