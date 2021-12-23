@@ -66,10 +66,10 @@ public:
     void addMesh( TriMesh* mesh, const std::string &name, const std::string &texture_image, const std::string &vshader, const std::string &fshader );
 
 	// 绘制物体
-    void drawMesh(TriMesh* mesh, openGLObject &object, Light *light, Camera* camera);
+    void drawMesh(TriMesh* mesh, openGLObject &object, Light *light, Camera* camera, bool isOrtho);
 
 	// 绘制多个物体
-    void drawMeshes(Light *light, Camera* camera);
+    void drawMeshes(Light *light, Camera* camera, bool isOrtho);
 
 	// 清空数据
     void cleanMeshes();

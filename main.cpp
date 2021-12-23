@@ -31,7 +31,7 @@ void init()
 #endif
 
 	// 设置光源位置
-	light->setTranslation(glm::vec3(0.0, 0.0, 2.0));
+	light->setTranslation(glm::vec3(0.0, 15.0, 15.0));
 	light->setAmbient(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 环境光
 	light->setDiffuse(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 漫反射
 	light->setSpecular(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 镜面反射
@@ -44,7 +44,7 @@ void init()
 	table->readObj("./assets/table.obj");
 
 	// 设置物体的旋转位移
-	table->setTranslation(glm::vec3(-0.5, 0.0, 0.0));
+	table->setTranslation(glm::vec3(-0.5, 0.2, 0.0));
 	table->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	table->setScale(glm::vec3(1.0, 1.0, 1.0));
 
@@ -63,15 +63,15 @@ void init()
 	wawa->readObj("./assets/wawa.obj");
 
 	// 设置物体的旋转位移
-	wawa->setTranslation(glm::vec3(0.5, 0.0, 0.0));
+	wawa->setTranslation(glm::vec3(0.5, 0.4, 0.0));
 	wawa->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	wawa->setScale(glm::vec3(1.0, 1.0, 1.0));
 
-	//设置brass材质
-	wawa->setAmbient(glm::vec4(0.329412f, 0.223529f, 0.027451f,1.0f)); // 环境光
-	wawa->setDiffuse(glm::vec4(0.780392f, 0.568627f, 0.113725f, 1.0f)); // 漫反射
-	wawa->setSpecular(glm::vec4(0.992157f, 0.941176f, 0.807843f, 1.0f)); // 镜面反射
-	wawa->setShininess(27.8974f); //高光系数
+	// 设置材质
+	wawa->setAmbient(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 环境光
+	wawa->setDiffuse(glm::vec4(0.7, 0.7, 0.7, 1.0)); // 漫反射
+	wawa->setSpecular(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 镜面反射
+	wawa->setShininess(0.5); //高光系数
 
 	// 加到painter中
 	painter->addMesh(wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
@@ -82,6 +82,8 @@ void init()
 }
 
 
+//true: 正交投影，false: 透视投影
+bool isOrtho = true;
 
 void display()
 {
@@ -90,7 +92,7 @@ void display()
 	// #endif
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	painter->drawMeshes(light, camera);
+	painter->drawMeshes(light, camera, isOrtho);
 
 	//glutSwapBuffers();
 }
@@ -113,7 +115,9 @@ void printHelp()
 		"SPACE:		Reset camera parameters" << std::endl <<
 		"u/U:		Increase/Decrease the rotate angle" << std::endl <<
 		"i/I:		Increase/Decrease the up angle" << std::endl <<
-		"o/O:		Increase/Decrease the camera radius" << std::endl << std::endl;
+		"o/O:		Increase/Decrease the camera radius" << std::endl << std::endl <<
+		"j:			Orthogonal projection mode" << std::endl <<
+		"k:			Perspective projection mode\n";
 
 }
 
@@ -127,6 +131,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		{
 		case GLFW_KEY_ESCAPE: exit(EXIT_SUCCESS); break;
 		case GLFW_KEY_H: printHelp(); break;
+		case GLFW_KEY_J: isOrtho = true; break;
+		case GLFW_KEY_K: isOrtho = false; break;
 		default:
 			camera->keyboard(key, action, mode);
 			break;

@@ -20,6 +20,7 @@ struct Material{
 
 in vec3 position;
 in vec3 normal;
+in vec2 texCoord;
 
 // 相机坐标
 uniform vec3 eye_position;
@@ -29,6 +30,10 @@ uniform Light light;
 uniform Material material;
 
 uniform int isShadow;
+
+// 纹理数据
+uniform sampler2D texture;
+
 
 out vec4 fColor;
 
@@ -75,8 +80,12 @@ void main()
 		     I_s = vec4(0.0, 0.0, 0.0, 1.0);
 		 } 
 
+		// 纹理：在初始时设定了纹理后,乘以0.5再加上光照,可实现有纹理也有阴影的效果
+		fColor = texture2D( texture, texCoord );
+		fColor *= 0.5;
+
 		// 合并三个分量的颜色，修正透明度
-		fColor = I_a + I_d + I_s;
+		fColor += I_a + I_d + I_s;
 		fColor.a = 1.0;
 	}
 }
