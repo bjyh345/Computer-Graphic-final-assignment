@@ -4,7 +4,7 @@
 #include "TriMesh.h"
 #include "Angel.h"
 
-#include "Camera.h"
+#include <learnopengl/camera.h>
 
 #include <vector>
 #include <iostream>
@@ -51,9 +51,6 @@ public:
 	MeshPainter();
 	~MeshPainter();
 
-	GLuint skyboxProgram = 0;
-	GLuint skyboxVao = 0, skyboxVbo = 0;
-
 	std::vector<std::string> getMeshNames();
 	std::vector<TriMesh*> getMeshes();
 	std::vector<openGLObject> getOpenGLObj();
@@ -61,8 +58,7 @@ public:
 	// 读取2D纹理文件
 	void load_texture_STBImage(const std::string& file_name, GLuint& texture);
 
-	// 传递光线材质数据的
-	// void bindLightAndMaterial( int mesh_id, int light_id, Camera* camera );
+	// 传递光线材质数据
 	void bindLightAndMaterial(TriMesh* mesh, openGLObject& object, Light* light, Camera* camera);
 
 	void bindObjectAndData(TriMesh* mesh, openGLObject& object, const std::string& texture_image, const std::string& vshader, const std::string& fshader);

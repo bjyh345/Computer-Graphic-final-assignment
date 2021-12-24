@@ -83,22 +83,7 @@ void MeshPainter::bindObjectAndData(TriMesh *mesh, openGLObject &object, const s
     glGenTextures(1, &object.texture);
     // 调用stb_image生成纹理
     load_texture_STBImage(object.texture_image, object.texture);
-    
-    // Clean up
-    glUseProgram(0);
-#ifdef __APPLE__
-    glBindVertexArrayAPPLE(0);
-#else
-    glBindVertexArray(0);
-#endif
-	// 读取纹理图片
-	object.texture_image = texture_image;
-	// 创建纹理的缓存对象
-	glGenTextures(1, &object.texture);
-
-	// 调用stb_image生成纹理
-	load_texture_STBImage(object.texture_image, object.texture);
-
+   
 
 	// Clean up
 	glUseProgram(0);
@@ -111,7 +96,7 @@ void MeshPainter::bindLightAndMaterial( TriMesh* mesh, openGLObject &object, Lig
     // 传递材质、光源等数据给着色器
     
     // 传递相机的位置
-    glUniform3fv(glGetUniformLocation(object.program, "eye_position"), 1, &camera->eye[0]);
+    glUniform3fv(glGetUniformLocation(object.program, "eye_position"), 1, &camera->Front[0]);
 
     // 传递物体的材质
     glm::vec4 meshAmbient = mesh->getAmbient();
@@ -159,7 +144,6 @@ void MeshPainter::drawMesh(TriMesh* mesh, openGLObject &object, Light *light, Ca
     // 相机矩阵计算
 	camera->updateCamera();
 	camera->viewMatrix = camera->getViewMatrix();
-	camera->projMatrix = camera->getProjectionMatrix(false);
 
 	glBindVertexArray(object.vao);
 	glUseProgram(object.program);
@@ -235,10 +219,6 @@ void MeshPainter::cleanMeshes() {
 
 	meshes.clear();
 	opengl_objects.clear();
-
-	glDeleteVertexArrays(1, &skyboxVao);
-    glDeleteBuffers(1, &skyboxVbo);
-	glDeleteProgram(skyboxProgram);
 	};
 
 

@@ -1,14 +1,15 @@
 #include "Angel.h"
 #include "TriMesh.h"
-#include "Camera.h"
 #include "MeshPainter.h"
-
+#include <learnopengl/camera.h>
+#include <learnopengl/shader.h>
+#include <stb_image.h>
 #include <vector>
 #include <string>
 
 // 窗口大小
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 800;
+const GLuint SCR_WIDTH = 800;
+const GLuint SCR_HEIGHT = 800;
 
 //初始让鼠标位于窗口中心
 float lastX = SCR_WIDTH / 2.0f;
@@ -19,13 +20,12 @@ int mainWindow;
 //鼠标从外面进入窗口,设为true
 bool firstMouse = true;
 
-Camera* camera = new Camera();
+Camera* camera = new Camera(glm::vec3(0.0f, 0.0f, 3.0f));
 Light* light = new Light();
 MeshPainter* painter = new MeshPainter();
 
 // 这个用来回收和删除我们创建的物体对象
 std::vector<TriMesh*> meshList;
-
 
 float skyboxVertices[] = {
 	// positions          
@@ -72,9 +72,68 @@ float skyboxVertices[] = {
 	 1.0f, -1.0f,  1.0f
 };
 
+vector<std::string> faces
+{
+	"./assets/skybox/arch3_lf.png",
+	"./assets/skybox/arch3_rt.png",
+	"./assets/skybox/arch3_up.png",
+	"./assets/skybox/arch3_dn.png",
+	"./assets/skybox/arch3_ft.png",
+	"./assets/skybox/arch3_bk.png"
+
+	//"./assets/skybox/right.jpg",
+	//"./assets/skybox/left.jpg",
+	//"./assets/skybox/top.jpg",
+	//"./assets/skybox/bottom.jpg",
+	//"./assets/skybox/front.jpg",
+	//"./assets/skybox/back.jpg"
+};
+
+
+// loads a cubemap texture from 6 individual texture faces
+// order:
+// +X (right)
+// -X (left)
+// +Y (top)
+// -Y (bottom)
+// +Z (front) 
+// -Z (back)
+// -------------------------------------------------------
+GLuint loadCubemap(vector<std::string> faces)
+{
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	int width, height, nrChannels;
+	for (GLuint i = 0; i < faces.size(); i++)
+	{
+		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+			stbi_image_free(data);
+		}
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureID;
+}
+
 
 void init()
 {
+	camera->projMatrix = glm::perspective(glm::radians(camera->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
 	std::string vshader, fshader;
 	// 读取着色器并使用
 	vshader = "shaders/vshader_win.glsl";
@@ -125,7 +184,7 @@ void init()
 	wawa->setShininess(1.0); //高光系数
 
 	// 加到painter中
-	painter->addMesh( wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
+	painter->addMesh(wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	// glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -137,6 +196,7 @@ bool isOrtho = true;
 
 void display()
 {
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	painter->drawMeshes(light, camera);
@@ -187,10 +247,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	}
 
 	float xoffset = xpos - lastX;
-	float yoffset = ypos - lastY;
+	//float yoffset = ypos - lastY;
 
 	// reversed since y-coordinates range from bottom to top
-	 //float yoffset = lastY - ypos; 
+	float yoffset = lastY - ypos;
 
 	lastX = xpos;
 	lastY = ypos;
@@ -241,7 +301,7 @@ int main(int argc, char** argv)
 #endif
 
 	// 配置窗口属性
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "2019152091陆和淇期末大作业", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "2019152091", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -265,16 +325,48 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	// 启用深度测试
+	glEnable(GL_DEPTH_TEST);
+
 	// Init mesh, shaders, buffer
 	init();
 	// 输出帮助信息
 	printHelp();
-	// 启用深度测试
-	glEnable(GL_DEPTH_TEST);
+
+	// skybox VAO
+	GLuint skyboxVAO, skyboxVBO;
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	GLuint cubemapTexture = loadCubemap(faces);
+
+	Shader skyboxShader("./shaders/skybox_vs.glsl", "./shaders/skybox_fs.glsl");
+	skyboxShader.use();
+	skyboxShader.setInt("skybox", 0);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		display();
 		//reshape();
+
+		// draw skybox as last
+		glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+		skyboxShader.use();
+		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // remove translation from the view matrix
+		skyboxShader.setMat4("view", view);
+		skyboxShader.setMat4("projection", camera->projMatrix);
+		// skybox cube
+		glBindVertexArray(skyboxVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS); // set depth function back to default
 
 		// 交换颜色缓冲 以及 检查有没有触发什么事件（比如键盘输入、鼠标移动等）
 		// -------------------------------------------------------------------------------
@@ -283,7 +375,8 @@ int main(int argc, char** argv)
 	}
 
 	cleanData();
-
+	glDeleteVertexArrays(1, &skyboxVAO);
+	glDeleteBuffers(1, &skyboxVBO);
 
 	return 0;
 }
