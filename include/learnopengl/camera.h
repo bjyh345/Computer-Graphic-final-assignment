@@ -16,13 +16,17 @@ enum Camera_Movement {
 };
 
 
+// 窗口大小
+const GLuint SCR_WIDTH = 1000;
+const GLuint SCR_HEIGHT = 800;
+
+
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
 const float SPEED = 2.5f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
-
 
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
@@ -32,11 +36,6 @@ public:
 	// 模视矩阵
 	glm::mat4 viewMatrix;
 	glm::mat4 projMatrix;
-
-	// 窗口大小
-	GLuint SCR_WIDTH;
-	GLuint SCR_HEIGHT;
-
 
 	// camera Attributes
 	glm::vec3 Position;
@@ -57,6 +56,7 @@ public:
 	// constructor with vectors
 	Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
 	{
+		this->viewMatrix = this->getViewMatrix();
 		Position = position;
 		WorldUp = up;
 		Yaw = yaw;
@@ -108,6 +108,21 @@ public:
 		}
 	}
 
+	// processes input received from any keyboard-like input system. Accepts 
+	//input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
+	void processKeyboard(Camera_Movement direction, float deltaTime)
+	{
+		float velocity = MovementSpeed * deltaTime;
+		if (direction == FORWARD)
+			Position += Front * velocity;
+		if (direction == BACKWARD)
+			Position -= Front * velocity;
+		if (direction == LEFT)
+			Position -= Right * velocity;
+		if (direction == RIGHT)
+			Position += Right * velocity;
+	}
+
 	// processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 	void processMouseScroll(float yoffset)
 	{
@@ -121,19 +136,18 @@ public:
 	// calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCamera()
 	{
-		// 相机位置参数
-		float radius = 10.0f;
-
 		// calculate the new Front vector
 		glm::vec3 front;
-		front.x = radius * cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-		front.y = radius * sin(glm::radians(Pitch));
-		front.z = radius * sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+		front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+		front.y = sin(glm::radians(Pitch));
+		front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
 		Front = glm::normalize(front);
 
 		// also re-calculate the Right and Up vector
 		Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
 		Up = glm::normalize(glm::cross(Right, Front));
+
+		projMatrix = glm::perspective(glm::radians(Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 	}
 };
 #endif

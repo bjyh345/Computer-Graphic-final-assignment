@@ -145,7 +145,7 @@ void MeshPainter::drawMesh(TriMesh* mesh, openGLObject &object, Light *light, Ca
 	camera->updateCamera();
 	camera->viewMatrix = camera->getViewMatrix();
 
-	glBindVertexArray(object.vao);
+    glBindVertexArray(object.vao);
 	glUseProgram(object.program);
 
 	// 物体的变换矩阵
@@ -227,8 +227,10 @@ void MeshPainter::load_texture_STBImage(const std::string& file_name, GLuint& te
 
 	int width, height, channels = 0;
     unsigned char *pixels = NULL;
-    // 读取图片的时候先翻转一下图片，如果不设置的话显示出来是反过来的图片
-    stbi_set_flip_vertically_on_load(true);
+    
+    // 读取图片的时候先翻转一下图片，如果不设置的话显示出来是反过来的图片，打开会翻转skybox
+    //stbi_set_flip_vertically_on_load(true);
+    
     // 读取图片数据
     pixels = stbi_load(file_name.c_str(), &width, &height, &channels, 0);
 

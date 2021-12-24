@@ -8,8 +8,8 @@
 #include <string>
 
 // 窗口大小
-const GLuint SCR_WIDTH = 800;
-const GLuint SCR_HEIGHT = 800;
+//const GLuint SCR_WIDTH = 1000;
+//const GLuint SCR_HEIGHT = 800;
 
 //初始让鼠标位于窗口中心
 float lastX = SCR_WIDTH / 2.0f;
@@ -19,6 +19,10 @@ int mainWindow;
 
 //鼠标从外面进入窗口,设为true
 bool firstMouse = true;
+
+// timing
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 Camera* camera = new Camera(glm::vec3(0.0f, 0.0f, 3.0f));
 Light* light = new Light();
@@ -140,7 +144,7 @@ void init()
 	fshader = "shaders/fshader_win.glsl";
 
 	// 设置光源位置
-	light->setTranslation(glm::vec3(1.0, 15.0, 15.0));
+	light->setTranslation(glm::vec3(1.0, 10.0, 10.0));
 	light->setAmbient(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 环境光
 	light->setDiffuse(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 漫反射
 	light->setSpecular(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 镜面反射
@@ -153,7 +157,7 @@ void init()
 	table->readObj("./assets/table.obj");
 
 	// 设置物体的旋转位移
-	table->setTranslation(glm::vec3(-0.5, 0.2, 0.0));
+	table->setTranslation(glm::vec3(-0.5, 0.0, 0.0));
 	table->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	table->setScale(glm::vec3(1.0, 1.0, 1.0));
 
@@ -166,42 +170,42 @@ void init()
 	// 加到painter中
 	painter->addMesh(table, "table_a", "./assets/table.png", vshader, fshader); 	// 指定纹理与着色器
 
-	TriMesh* wawa = new TriMesh();
-
-	// @TODO: Task2 读取娃娃模型
-	wawa->setNormalize(true);
-	wawa->readObj("./assets/wawa.obj");
+	// 杰尼龟
+	TriMesh* squirtle = new TriMesh();
+	squirtle->setNormalize(true);
+	squirtle->readOff("./assets/off/Squirtle.off");
 
 	// 设置物体的旋转位移
-	wawa->setTranslation(glm::vec3(0.5, 0.3, 0.0));
-	wawa->setRotation(glm::vec3(-90.0, 0.0, 0.0));
-	wawa->setScale(glm::vec3(1.0, 1.0, 1.0));
+	squirtle->setTranslation(glm::vec3(0.0, 0.3, 0.0));
+	squirtle->setRotation(glm::vec3(0.0, 0.0, 0.0));
+	squirtle->setScale(glm::vec3(1.0, 1.0, 1.0));
 
 	// 设置材质
-	wawa->setAmbient(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 环境光
-	wawa->setDiffuse(glm::vec4(0.7, 0.7, 0.7, 1.0)); // 漫反射
-	wawa->setSpecular(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 镜面反射
-	wawa->setShininess(1.0); //高光系数
+	squirtle->setAmbient(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 环境光
+	squirtle->setDiffuse(glm::vec4(0.7, 0.7, 0.7, 1.0)); // 漫反射
+	squirtle->setSpecular(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 镜面反射
+	squirtle->setShininess(1.0); //高光系数
 
-	// 加到painter中
-	painter->addMesh(wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
+	painter->addMesh(squirtle, "squirtle", "./assets/Squirtle.png", vshader, fshader);
+
+	TriMesh* plane = new TriMesh();
+
+	plane->setNormalize(false);
+	// 创建正方形平面，给它一个其他颜色
+	plane->generateTriangle(glm::vec3(0.0, 0, 0.0));
+	plane->setTranslation(glm::vec3(0, 0, 0));
+	plane->setRotation(glm::vec3(-90.0, 0, 0));
+	plane->setScale(glm::vec3(3, 3, 3));
+
+	painter->addMesh(plane, "plane", "./assets/RedCarpet.jpg", "./shaders/plane_vs.glsl", "./shaders/plane_fs.glsl");
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
-	// glClearColor(0.0, 0.0, 0.0, 1.0);
 }
 
 
-//true: 正交投影，false: 透视投影
-bool isOrtho = true;
-
 void display()
 {
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	painter->drawMeshes(light, camera);
-
-	//glutSwapBuffers();
 }
 
 
@@ -262,6 +266,22 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	camera->processMouseScroll(yoffset);
+}
+
+// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+void processInput(GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera->processKeyboard(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera->processKeyboard(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera->processKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera->processKeyboard(RIGHT, deltaTime);
 }
 
 void cleanData() {
@@ -328,8 +348,11 @@ int main(int argc, char** argv)
 	// 启用深度测试
 	glEnable(GL_DEPTH_TEST);
 
+	camera->projMatrix = glm::perspective(glm::radians(camera->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
 	// Init mesh, shaders, buffer
 	init();
+
 	// 输出帮助信息
 	printHelp();
 
@@ -351,8 +374,18 @@ int main(int argc, char** argv)
 
 	while (!glfwWindowShouldClose(window))
 	{
+		// per-frame time logic
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		// input
+		processInput(window);
+
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		display();
-		//reshape();
 
 		// draw skybox as last
 		glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
