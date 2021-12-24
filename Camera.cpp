@@ -6,6 +6,7 @@ Camera::~Camera() {}
 glm::mat4 Camera::getViewMatrix()
 {
 	return this->lookAt(eye, at, up);
+	//return glm::lookAt(Position, Position + Front, Up);
 }
 
 glm::mat4 Camera::getProjectionMatrix(bool isOrtho)
@@ -50,7 +51,7 @@ glm::mat4 Camera::ortho(const GLfloat left, const GLfloat right,
 glm::mat4 Camera::perspective(const GLfloat fovy, const GLfloat aspect,
 	const GLfloat zNear, const GLfloat zFar)
 {
-	GLfloat top = tan(fovy * M_PI / 180 / 2) * zNear;
+	GLfloat top = tan(glm::radians(fovy)) * zNear;
 	GLfloat right = top * aspect;
 
 	glm::mat4 c = glm::mat4(1.0f);
@@ -93,63 +94,63 @@ void Camera::updateCamera()
 	// 也可以考虑直接控制相机自身的俯仰角，
 	// 保存up，eye-at 这些向量，并修改这些向量方向来控制
 	// 看到这里的有缘人可以试一试
+	 
 	up = glm::vec4(0.0, 1.0, 0.0, 0.0);
-	if (upAngle > 90) {
-		up.y = -1;
-	}
-	else if (upAngle < -90) {
-		up.y = -1;
-	}
 
-	float eyex = radius * cos(upAngle * M_PI / 180.0) * sin(rotateAngle * M_PI / 180.0);
-	float eyey = radius * sin(upAngle * M_PI / 180.0);
-	float eyez = radius * cos(upAngle * M_PI / 180.0) * cos(rotateAngle * M_PI / 180.0);
+	float eyex = radius * cos(glm::radians(upAngle)) * cos(glm::radians(rotateAngle));
+	float eyey = radius * sin(glm::radians(upAngle));
+	float eyez = radius * cos(glm::radians(upAngle)) * sin(glm::radians(rotateAngle));
 
 	eye = glm::vec4(eyex, eyey, eyez, 1.0);
 	at = glm::vec4(0.0, 0.0, 0.0, 1.0);
-	// up = vec4(0.0, 1.0, 0.0, 0.0);
 
+	glm::vec3 front;
+	front.x = cos(glm::radians(upAngle)) * cos(glm::radians(rotateAngle));
+	front.y = sin(glm::radians(rotateAngle));
+	front.z = sin(glm::radians(upAngle)) * cos(glm::radians(rotateAngle));
+	Front = glm::normalize(front);
+	// also re-calculate the Right and Up vector
+	Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+	Up = glm::normalize(glm::cross(Right, Front));
 }
 
 
 void Camera::keyboard(int key, int action, int mode)
 {
-	if (key == GLFW_KEY_U && action == GLFW_PRESS && mode == 0x0000)
-	{
-		rotateAngle += 10.0;
-	}
-	else if (key == GLFW_KEY_U && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT)
-	{
-		rotateAngle -= 10.0;
-	}
-	else if (key == GLFW_KEY_I && action == GLFW_PRESS && mode == 0x0000)
-	{
-		upAngle += 10.0;
-		if (upAngle > 180)
-			upAngle = 180;
-	}
-	else if (key == GLFW_KEY_I && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT)
-	{
-		upAngle -= 10.0;
-		if (upAngle < -180)
-			upAngle = -180;
-	}
-	else if (key == GLFW_KEY_O && action == GLFW_PRESS && mode == 0x0000)
-	{
-		radius += 0.1;
-	}
-	else if (key == GLFW_KEY_O && action == GLFW_PRESS && mode == GLFW_MOD_SHIFT)
-	{
-		radius -= 0.1;
-	}
-	else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && mode == 0x0000)
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && mode == 0x0000)
 	{
 		radius = 2.0;
-		rotateAngle = 0.0;
+		rotateAngle = 180.0f;
 		upAngle = 0.0;
 		fov = 45.0;
 		aspect = 1.0;
 		scale = 1.5;
 	}
 
+}
+
+void Camera::processMouseMovement(float x, float y)
+{
+	x *= sensitivity;
+	y *= sensitivity;
+
+	rotateAngle += x;
+	upAngle += y;
+
+	if (upAngle > 89.0f)
+		upAngle = 89.0f;
+
+	if (upAngle < -89.0f)
+		upAngle = -89.0f;
+
+	updateCamera();
+}
+
+void Camera::processMouseScroll(float yoffset)
+{
+	fov -= (float)yoffset;
+	if (fov < 1.0f)
+		fov = 1.0f;
+	if (fov > 45.0f)
+		fov = 45.0f;
 }

@@ -3,12 +3,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-MeshPainter::MeshPainter() {};
+
+MeshPainter::MeshPainter() 
+{
+};
 MeshPainter::~MeshPainter() {};
 
 std::vector<std::string> MeshPainter::getMeshNames() { return mesh_names; };
 std::vector<TriMesh*> MeshPainter::getMeshes() { return meshes; };
 std::vector<openGLObject> MeshPainter::getOpenGLObj() { return opengl_objects; };
+
 
 void MeshPainter::bindObjectAndData(TriMesh* mesh, openGLObject& object, const std::string& texture_image, const std::string& vshader, const std::string& fshader) {
 	// 初始化各种对象
@@ -19,13 +23,8 @@ void MeshPainter::bindObjectAndData(TriMesh* mesh, openGLObject& object, const s
 	std::vector<glm::vec2> textures = mesh->getTextures();
 
 	// 创建顶点数组对象
-#ifdef __APPLE__	// for MacOS
-	glGenVertexArraysAPPLE(1, &object.vao);		// 分配1个顶点数组对象
-	glBindVertexArrayAPPLE(object.vao);		// 绑定顶点数组对象
-#else				// for Windows
 	glGenVertexArrays(1, &object.vao);  	// 分配1个顶点数组对象
 	glBindVertexArray(object.vao);  	// 绑定顶点数组对象
-#endif
 
 	// 创建并初始化顶点缓存对象
 	glGenBuffers(1, &object.vbo);
@@ -82,20 +81,18 @@ void MeshPainter::bindObjectAndData(TriMesh* mesh, openGLObject& object, const s
 
 	object.shadowLocation = glGetUniformLocation(object.program, "isShadow");
 
-	// 读取纹理图片数
+	// 读取纹理图片
 	object.texture_image = texture_image;
 	// 创建纹理的缓存对象
 	glGenTextures(1, &object.texture);
+
 	// 调用stb_image生成纹理
 	load_texture_STBImage(object.texture_image, object.texture);
 
+
 	// Clean up
 	glUseProgram(0);
-#ifdef __APPLE__
-	glBindVertexArrayAPPLE(0);
-#else
 	glBindVertexArray(0);
-#endif
 
 };
 
@@ -154,11 +151,7 @@ void MeshPainter::drawMesh(TriMesh* mesh, openGLObject& object, Light* light, Ca
 	camera->viewMatrix = camera->getViewMatrix();
 	camera->projMatrix = camera->getProjectionMatrix(isOrtho);
 
-#ifdef __APPLE__	// for MacOS
-	glBindVertexArrayAPPLE(object.vao);
-#else
 	glBindVertexArray(object.vao);
-#endif
 	glUseProgram(object.program);
 
 	// 物体的变换矩阵
@@ -197,15 +190,42 @@ void MeshPainter::drawMesh(TriMesh* mesh, openGLObject& object, Light* light, Ca
 	glUniform1i(object.shadowLocation, 1);
 	glDrawArrays(GL_TRIANGLES, 0, mesh->getPoints().size());
 
-
-#ifdef __APPLE__	// for MacOS
-	glBindVertexArrayAPPLE(0);
-#else
 	glBindVertexArray(0);
-#endif
 	glUseProgram(0);
 
 };
+
+
+void MeshPainter::drawSkybox(Camera* camera) {
+	
+	// change depth function so depth test passes when values are equal to depth buffer's content
+	glDepthFunc(GL_LEQUAL);
+	glUseProgram(skyboxProgram);
+
+	// remove translation from the view matrix
+	camera->viewMatrix = glm::mat4(glm::mat3(camera->getViewMatrix()));
+
+	//isOrtho---true: 正交投影，false: 透视投影
+	camera->projMatrix = camera->getProjectionMatrix(false);
+
+	string view = "view";
+	string projection = "projection";
+	// 传递矩阵
+	glUniformMatrix4fv(glGetUniformLocation(skyboxProgram, view.c_str()), 1, GL_FALSE, &camera->viewMatrix[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(skyboxProgram, projection.c_str()), 1, GL_FALSE, &camera->projMatrix[0][0]);
+
+	glBindVertexArray(skyboxVao);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, loadCubemap());
+
+	// 绘制
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+	// set depth function back to default
+	glDepthFunc(GL_LESS);
+};
+
 
 //isOrtho---true: 正交投影，false: 透视投影
 void MeshPainter::drawMeshes(Light* light, Camera* camera, bool isOrtho) {
@@ -215,8 +235,8 @@ void MeshPainter::drawMeshes(Light* light, Camera* camera, bool isOrtho) {
 	}
 };
 
+// 将数据都清空释放
 void MeshPainter::cleanMeshes() {
-	// 将数据都清空释放
 	mesh_names.clear();
 
 	for (int i = 0; i < meshes.size(); i++)
@@ -237,11 +257,15 @@ void MeshPainter::cleanMeshes() {
 
 	meshes.clear();
 	opengl_objects.clear();
-};
+
+	glDeleteVertexArrays(1, &skyboxVao);
+    glDeleteBuffers(1, &skyboxVbo);
+	glDeleteProgram(skyboxProgram);
+	};
 
 
+// 读取纹理图片，并将其传递给着色器
 void MeshPainter::load_texture_STBImage(const std::string& file_name, GLuint& texture) {
-	// 读取纹理图片，并将其传递给着色器
 
 	int width, height, channels = 0;
 	unsigned char* pixels = NULL;
@@ -300,3 +324,68 @@ void MeshPainter::load_texture_STBImage(const std::string& file_name, GLuint& te
 	// 释放图形内存
 	stbi_image_free(pixels);
 };
+
+
+
+// loads a cubemap texture from 6 individual texture faces
+// order:
+// +X (right)
+// -X (left)
+// +Y (top)
+// -Y (bottom)
+// +Z (front) 
+// -Z (back)
+GLuint MeshPainter::loadCubemap()
+{
+	vector<std::string> faces
+	{
+		//"./assets/skybox/skyhsky_rt.png",
+		//"./assets/skybox/skyhsky_lf.png",
+		//"./assets/skybox/skyhsky_up.png",
+		//"./assets/skybox/skyhsky_dn.png",
+		//"./assets/skybox/skyhsky_ft.png",
+		//"./assets/skybox/skyhsky_bk.png"
+
+
+		"./assets/skybox/arch3_lf.png",
+        "./assets/skybox/arch3_rt.png",
+		"./assets/skybox/arch3_up.png",
+		"./assets/skybox/arch3_dn.png",
+		"./assets/skybox/arch3_ft.png",
+		"./assets/skybox/arch3_bk.png"
+
+		//"./assets/skybox/right.jpg",
+		//"./assets/skybox/left.jpg",
+		//"./assets/skybox/top.jpg",
+		//"./assets/skybox/bottom.jpg",
+		//"./assets/skybox/front.jpg",
+		//"./assets/skybox/back.jpg"
+	};
+
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	int width, height, nrChannels;
+	for (unsigned int i = 0; i < faces.size(); i++)
+	{
+		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+			stbi_image_free(data);
+		}
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureID;
+}

@@ -6,10 +6,18 @@
 #include <vector>
 #include <string>
 
-int WIDTH = 600;
-int HEIGHT = 600;
+// 窗口大小
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 800;
+
+//初始让鼠标位于窗口中心
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
 
 int mainWindow;
+
+//鼠标从外面进入窗口,设为true
+bool firstMouse = true;
 
 Camera* camera = new Camera();
 Light* light = new Light();
@@ -18,17 +26,59 @@ MeshPainter* painter = new MeshPainter();
 // 这个用来回收和删除我们创建的物体对象
 std::vector<TriMesh*> meshList;
 
+
+float skyboxVertices[] = {
+	// positions          
+	-1.0f,  1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	 1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+
+	-1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f
+};
+
+
 void init()
 {
 	std::string vshader, fshader;
 	// 读取着色器并使用
-#ifdef __APPLE__	// for MacOS
-	vshader = "shaders/vshader_mac.glsl";
-	fshader = "shaders/fshader_mac.glsl";
-#else				// for Windows
 	vshader = "shaders/vshader_win.glsl";
 	fshader = "shaders/fshader_win.glsl";
-#endif
 
 	// 设置光源位置
 	light->setTranslation(glm::vec3(0.0, 15.0, 15.0));
@@ -37,15 +87,15 @@ void init()
 	light->setSpecular(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 镜面反射
 	light->setAttenuation(1.0, 0.045, 0.0075); // 衰减系数
 
-
 	TriMesh* table = new TriMesh();
+
 	// @TODO: Task2 读取桌子模型
 	table->setNormalize(true);
 	table->readObj("./assets/table.obj");
 
 	// 设置物体的旋转位移
 	table->setTranslation(glm::vec3(-0.5, 0.2, 0.0));
-	table->setRotation(glm::vec3(-90.0, 0.0, 0.0));
+	table->setRotation(glm::vec3(-90.0, 90.0, 0.0));
 	table->setScale(glm::vec3(1.0, 1.0, 1.0));
 
 	// 设置材质
@@ -58,6 +108,7 @@ void init()
 	painter->addMesh(table, "table_a", "./assets/table.png", vshader, fshader); 	// 指定纹理与着色器
 
 	TriMesh* wawa = new TriMesh();
+
 	// @TODO: Task2 读取娃娃模型
 	wawa->setNormalize(true);
 	wawa->readObj("./assets/wawa.obj");
@@ -74,25 +125,37 @@ void init()
 	wawa->setShininess(0.5); //高光系数
 
 	// 加到painter中
-	painter->addMesh(wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
+	painter->addMesh( wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
+
+	string skybox_vs = "./shaders/skybox_vs.glsl";
+	string skybox_fs = "./shaders/skybox_fs.glsl";
+
+	glGenVertexArrays(1, &painter->skyboxVao);
+	glGenBuffers(1, &painter->skyboxVbo);
+	glBindVertexArray(painter->skyboxVao);
+	glBindBuffer(GL_ARRAY_BUFFER, painter->skyboxVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	painter->skyboxProgram = InitShader(skybox_vs.c_str(), skybox_fs.c_str());
+	string name = "skybox";
+	glUniform1i(glGetUniformLocation(painter->skyboxProgram, name.c_str()), 0);
 
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	// glClearColor(0.0, 0.0, 0.0, 1.0);
 }
 
-
 //true: 正交投影，false: 透视投影
-bool isOrtho = true;
-
+bool isOrtho = false;
 void display()
 {
-	// #ifdef __APPLE__ // 解决 macOS 10.15 显示画面缩小问题
-	// 	glViewport(0, 0, WIDTH * 2, HEIGHT * 2);
-	// #endif
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	painter->drawMeshes(light, camera, isOrtho);
+	//painter->drawMeshes(light, camera, isOrtho);
+
+	painter->drawSkybox(camera);
 
 	//glutSwapBuffers();
 }
@@ -100,22 +163,15 @@ void display()
 
 void printHelp()
 {
-	std::cout << "================================================" << std::endl;
-	std::cout << "Use mouse to controll the light position (drag)." << std::endl;
-	std::cout << "================================================" << std::endl << std::endl;
-
 	std::cout << "Keyboard Usage" << std::endl;
 	std::cout <<
 		"[Window]" << std::endl <<
 		"ESC:		Exit" << std::endl <<
-		"h:		Print help message" << std::endl <<
-
-		std::endl <<
+		"h:			Print help message" << std::endl << std::endl <<
 		"[Camera]" << std::endl <<
+		"Cursor:    Move your cursor to look around\n" <<
+		"Scroll:	Zoom the object" << std::endl <<
 		"SPACE:		Reset camera parameters" << std::endl <<
-		"u/U:		Increase/Decrease the rotate angle" << std::endl <<
-		"i/I:		Increase/Decrease the up angle" << std::endl <<
-		"o/O:		Increase/Decrease the camera radius" << std::endl << std::endl <<
 		"j:			Orthogonal projection mode" << std::endl <<
 		"k:			Perspective projection mode\n";
 
@@ -140,28 +196,33 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-// 鼠标设置光源x,y位置
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+// 鼠标响应函数，只要鼠标移动，该函数就会被调用
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	if (firstMouse)
 	{
-		double x, y;
-		glfwGetCursorPos(window, &x, &y);
-
-		float half_winx = WIDTH / 2.0;
-		float half_winy = HEIGHT / 2.0;
-		float lx = float(x - half_winx) / half_winx;
-		float ly = float(HEIGHT - y - half_winy) / half_winy;
-
-		glm::vec3 pos = light->getTranslation();
-
-		pos.x = lx;
-		pos.y = ly;
-
-		light->setTranslation(pos);
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
 	}
+
+	float xoffset = xpos - lastX;
+	//float yoffset = ypos - lastY;
+
+	// reversed since y-coordinates range from bottom to top
+	 float yoffset = lastY - ypos; 
+
+	lastX = xpos;
+	lastY = ypos;
+
+	camera->processMouseMovement(xoffset, yoffset);
 }
 
+// 滚轮响应函数
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	camera->processMouseScroll(yoffset);
+}
 
 void cleanData() {
 	// 释放内存
@@ -200,7 +261,7 @@ int main(int argc, char** argv)
 #endif
 
 	// 配置窗口属性
-	GLFWwindow* window = glfwCreateWindow(600, 600, "2019152091陆和淇期末大作业", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "2019152091陆和淇期末大作业", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -208,9 +269,13 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-	glfwSetKeyCallback(window, key_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	// 让鼠标定于窗口中心，并隐藏光标
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// 调用任何OpenGL的函数之前初始化GLAD
 	// ---------------------------------------

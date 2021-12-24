@@ -29,6 +29,10 @@ public:
 	void updateCamera();
 	// 处理相机的键盘操作
 	void keyboard(int key, int x, int y);
+	// 处理鼠标移动，实现fps相机
+	void processMouseMovement(float x, float y);
+	// 处理鼠标滚轮滚动，缩放物体
+	void processMouseScroll(float yoffset);
 
 	// 模视矩阵
 	glm::mat4 viewMatrix;
@@ -36,20 +40,32 @@ public:
 
 	// 相机位置参数
 	float radius = 2.0;
-	float rotateAngle = 0.0;
+
+	// yaw
+	float rotateAngle = 180.0f;
+	// pitch
 	float upAngle = 0.0;
+	// 鼠标灵敏度
+	const float sensitivity = 0.1f;
+
 	glm::vec4 eye;
 	glm::vec4 at;
 	glm::vec4 up;
 
+	glm::vec3 Position;
+	glm::vec3 Front;
+	glm::vec3 Up;
+	glm::vec3 Right;
+	glm::vec3 WorldUp;
+
 	// 投影参数
-	float zNear = 0.1;
-	float zFar = 100.0;
+	float zNear = 0.1f;
+	float zFar = 100.0f;
 	// 透视投影参数
-	float fov = 45.0;
-	float aspect = 1.0;
+	float fov = 45.0f;
+	float aspect = 1.0f;
 	// 正交投影参数
-	float scale = 1.5;
+	float scale = 1.5f;
 
 };
 #endif

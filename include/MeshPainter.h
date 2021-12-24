@@ -7,7 +7,9 @@
 #include "Camera.h"
 
 #include <vector>
+#include <iostream>
 
+using namespace std;
 
 struct openGLObject
 {
@@ -27,9 +29,9 @@ struct openGLObject
 	GLuint nLocation;
 	GLuint tLocation;
 
-    // 纹理
-    std::string texture_image;
-    GLuint texture;
+	// 纹理
+	std::string texture_image;
+	GLuint texture;
 
 	// 投影变换变量
 	GLuint modelLocation;
@@ -45,40 +47,47 @@ class MeshPainter
 {
 
 public:
-    MeshPainter();
-    ~MeshPainter();
 
-    std::vector<std::string> getMeshNames();
+	MeshPainter();
+	~MeshPainter();
 
-    std::vector<TriMesh *> getMeshes();
-    std::vector<openGLObject> getOpenGLObj();
+	GLuint skyboxProgram = 0;
+	GLuint skyboxVao = 0, skyboxVbo = 0;
 
-	// 读取纹理文件
-    void load_texture_STBImage(const std::string &file_name, GLuint& texture);
+	std::vector<std::string> getMeshNames();
+	std::vector<TriMesh*> getMeshes();
+	std::vector<openGLObject> getOpenGLObj();
+
+	// 读取2D纹理文件
+	void load_texture_STBImage(const std::string& file_name, GLuint& texture);
+
+	// 读取cubemap
+	GLuint loadCubemap();
 
 	// 传递光线材质数据的
-    // void bindLightAndMaterial( int mesh_id, int light_id, Camera* camera );
-    void bindLightAndMaterial(TriMesh* mesh, openGLObject& object, Light* light, Camera* camera);
+	// void bindLightAndMaterial( int mesh_id, int light_id, Camera* camera );
+	void bindLightAndMaterial(TriMesh* mesh, openGLObject& object, Light* light, Camera* camera);
 
-    void bindObjectAndData(TriMesh *mesh, openGLObject &object, const std::string &texture_image, const std::string &vshader, const std::string &fshader);
+	void bindObjectAndData(TriMesh* mesh, openGLObject& object, const std::string& texture_image, const std::string& vshader, const std::string& fshader);
 
 	// 添加物体
-    void addMesh( TriMesh* mesh, const std::string &name, const std::string &texture_image, const std::string &vshader, const std::string &fshader );
+	void addMesh(TriMesh* mesh, const std::string& name, const std::string& texture_image, const std::string& vshader, const std::string& fshader);
 
 	// 绘制物体
-    void drawMesh(TriMesh* mesh, openGLObject &object, Light *light, Camera* camera, bool isOrtho);
+	void drawMesh(TriMesh* mesh, openGLObject& object, Light* light, Camera* camera, bool isOrtho);
+
+	void drawSkybox(Camera* camera);
 
 	// 绘制多个物体
-    void drawMeshes(Light *light, Camera* camera, bool isOrtho);
+	void drawMeshes(Light* light, Camera* camera, bool isOrtho);
 
 	// 清空数据
-    void cleanMeshes();
+	void cleanMeshes();
 
 private:
-    std::vector<std::string> mesh_names;
-    std::vector<TriMesh *> meshes;
-    std::vector<openGLObject> opengl_objects;
-
+	std::vector<std::string> mesh_names;
+	std::vector<TriMesh*> meshes;
+	std::vector<openGLObject> opengl_objects;
 };
 
 #endif
