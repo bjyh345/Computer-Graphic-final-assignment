@@ -81,7 +81,7 @@ void init()
 	fshader = "shaders/fshader_win.glsl";
 
 	// 设置光源位置
-	light->setTranslation(glm::vec3(0.0, 15.0, 15.0));
+	light->setTranslation(glm::vec3(1.0, 15.0, 15.0));
 	light->setAmbient(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 环境光
 	light->setDiffuse(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 漫反射
 	light->setSpecular(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 镜面反射
@@ -95,7 +95,7 @@ void init()
 
 	// 设置物体的旋转位移
 	table->setTranslation(glm::vec3(-0.5, 0.2, 0.0));
-	table->setRotation(glm::vec3(-90.0, 90.0, 0.0));
+	table->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	table->setScale(glm::vec3(1.0, 1.0, 1.0));
 
 	// 设置材质
@@ -114,7 +114,7 @@ void init()
 	wawa->readObj("./assets/wawa.obj");
 
 	// 设置物体的旋转位移
-	wawa->setTranslation(glm::vec3(0.5, 0.4, 0.0));
+	wawa->setTranslation(glm::vec3(0.5, 0.3, 0.0));
 	wawa->setRotation(glm::vec3(-90.0, 0.0, 0.0));
 	wawa->setScale(glm::vec3(1.0, 1.0, 1.0));
 
@@ -122,40 +122,24 @@ void init()
 	wawa->setAmbient(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 环境光
 	wawa->setDiffuse(glm::vec4(0.7, 0.7, 0.7, 1.0)); // 漫反射
 	wawa->setSpecular(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 镜面反射
-	wawa->setShininess(0.5); //高光系数
+	wawa->setShininess(1.0); //高光系数
 
 	// 加到painter中
 	painter->addMesh( wawa, "wawa_a", "./assets/wawa.png", vshader, fshader); 	// 指定纹理与着色器
-
-	string skybox_vs = "./shaders/skybox_vs.glsl";
-	string skybox_fs = "./shaders/skybox_fs.glsl";
-
-	glGenVertexArrays(1, &painter->skyboxVao);
-	glGenBuffers(1, &painter->skyboxVbo);
-	glBindVertexArray(painter->skyboxVao);
-	glBindBuffer(GL_ARRAY_BUFFER, painter->skyboxVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-	painter->skyboxProgram = InitShader(skybox_vs.c_str(), skybox_fs.c_str());
-	string name = "skybox";
-	glUniform1i(glGetUniformLocation(painter->skyboxProgram, name.c_str()), 0);
-
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	// glClearColor(0.0, 0.0, 0.0, 1.0);
 }
 
+
 //true: 正交投影，false: 透视投影
-bool isOrtho = false;
+bool isOrtho = true;
+
 void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//painter->drawMeshes(light, camera, isOrtho);
-
-	painter->drawSkybox(camera);
+	painter->drawMeshes(light, camera);
 
 	//glutSwapBuffers();
 }
@@ -171,9 +155,7 @@ void printHelp()
 		"[Camera]" << std::endl <<
 		"Cursor:    Move your cursor to look around\n" <<
 		"Scroll:	Zoom the object" << std::endl <<
-		"SPACE:		Reset camera parameters" << std::endl <<
-		"j:			Orthogonal projection mode" << std::endl <<
-		"k:			Perspective projection mode\n";
+		"SPACE:		Reset camera parameters" << std::endl;
 
 }
 
@@ -187,8 +169,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		{
 		case GLFW_KEY_ESCAPE: exit(EXIT_SUCCESS); break;
 		case GLFW_KEY_H: printHelp(); break;
-		case GLFW_KEY_J: isOrtho = true; break;
-		case GLFW_KEY_K: isOrtho = false; break;
 		default:
 			camera->keyboard(key, action, mode);
 			break;
@@ -207,10 +187,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	}
 
 	float xoffset = xpos - lastX;
-	//float yoffset = ypos - lastY;
+	float yoffset = ypos - lastY;
 
 	// reversed since y-coordinates range from bottom to top
-	 float yoffset = lastY - ypos; 
+	 //float yoffset = lastY - ypos; 
 
 	lastX = xpos;
 	lastY = ypos;

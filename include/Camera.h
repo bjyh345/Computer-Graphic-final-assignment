@@ -52,12 +52,6 @@ public:
 	glm::vec4 at;
 	glm::vec4 up;
 
-	glm::vec3 Position;
-	glm::vec3 Front;
-	glm::vec3 Up;
-	glm::vec3 Right;
-	glm::vec3 WorldUp;
-
 	// 投影参数
 	float zNear = 0.1f;
 	float zFar = 100.0f;

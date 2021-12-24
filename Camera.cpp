@@ -104,14 +104,6 @@ void Camera::updateCamera()
 	eye = glm::vec4(eyex, eyey, eyez, 1.0);
 	at = glm::vec4(0.0, 0.0, 0.0, 1.0);
 
-	glm::vec3 front;
-	front.x = cos(glm::radians(upAngle)) * cos(glm::radians(rotateAngle));
-	front.y = sin(glm::radians(rotateAngle));
-	front.z = sin(glm::radians(upAngle)) * cos(glm::radians(rotateAngle));
-	Front = glm::normalize(front);
-	// also re-calculate the Right and Up vector
-	Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-	Up = glm::normalize(glm::cross(Right, Front));
 }
 
 
@@ -122,11 +114,10 @@ void Camera::keyboard(int key, int action, int mode)
 		radius = 2.0;
 		rotateAngle = 180.0f;
 		upAngle = 0.0;
-		fov = 45.0;
+		fov = 45.0f;
 		aspect = 1.0;
 		scale = 1.5;
 	}
-
 }
 
 void Camera::processMouseMovement(float x, float y)
@@ -153,4 +144,5 @@ void Camera::processMouseScroll(float yoffset)
 		fov = 1.0f;
 	if (fov > 45.0f)
 		fov = 45.0f;
+
 }

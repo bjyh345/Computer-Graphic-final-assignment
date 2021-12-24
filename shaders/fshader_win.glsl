@@ -30,11 +30,8 @@ uniform Light light;
 uniform Material material;
 
 uniform int isShadow;
-
 // 纹理数据
 uniform sampler2D texture;
-
-
 out vec4 fColor;
 
 // 模型变换矩阵、相机观察矩阵、投影矩阵
@@ -80,7 +77,6 @@ void main()
 		     I_s = vec4(0.0, 0.0, 0.0, 1.0);
 		 } 
 
-		// 纹理：在初始时设定了纹理后,乘以0.5再加上光照,可实现有纹理也有阴影的效果
 		fColor = texture2D( texture, texCoord );
 		fColor *= 0.5;
 

@@ -61,9 +61,6 @@ public:
 	// 读取2D纹理文件
 	void load_texture_STBImage(const std::string& file_name, GLuint& texture);
 
-	// 读取cubemap
-	GLuint loadCubemap();
-
 	// 传递光线材质数据的
 	// void bindLightAndMaterial( int mesh_id, int light_id, Camera* camera );
 	void bindLightAndMaterial(TriMesh* mesh, openGLObject& object, Light* light, Camera* camera);
@@ -74,12 +71,10 @@ public:
 	void addMesh(TriMesh* mesh, const std::string& name, const std::string& texture_image, const std::string& vshader, const std::string& fshader);
 
 	// 绘制物体
-	void drawMesh(TriMesh* mesh, openGLObject& object, Light* light, Camera* camera, bool isOrtho);
-
-	void drawSkybox(Camera* camera);
+    void drawMesh(TriMesh* mesh, openGLObject &object, Light *light, Camera* camera);
 
 	// 绘制多个物体
-	void drawMeshes(Light* light, Camera* camera, bool isOrtho);
+    void drawMeshes(Light *light, Camera* camera);
 
 	// 清空数据
 	void cleanMeshes();
