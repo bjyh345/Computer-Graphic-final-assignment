@@ -144,31 +144,11 @@ void init()
 	fshader = "shaders/fshader_win.glsl";
 
 	// 设置光源位置
-	light->setTranslation(glm::vec3(1.0, 10.0, 10.0));
+	light->setTranslation(glm::vec3(0, 10.0, -10.0));
 	light->setAmbient(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 环境光
 	light->setDiffuse(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 漫反射
 	light->setSpecular(glm::vec4(1.0, 1.0, 1.0, 1.0)); // 镜面反射
 	light->setAttenuation(1.0, 0.045, 0.0075); // 衰减系数
-
-	TriMesh* table = new TriMesh();
-
-	// @TODO: Task2 读取桌子模型
-	table->setNormalize(true);
-	table->readObj("./assets/table.obj");
-
-	// 设置物体的旋转位移
-	table->setTranslation(glm::vec3(-0.5, 0.0, 0.0));
-	table->setRotation(glm::vec3(-90.0, 0.0, 0.0));
-	table->setScale(glm::vec3(1.0, 1.0, 1.0));
-
-	// 设置材质
-	table->setAmbient(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 环境光
-	table->setDiffuse(glm::vec4(0.7, 0.7, 0.7, 1.0)); // 漫反射
-	table->setSpecular(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 镜面反射
-	table->setShininess(1.0); //高光系数
-
-	// 加到painter中
-	painter->addMesh(table, "table_a", "./assets/table.png", vshader, fshader); 	// 指定纹理与着色器
 
 	// 杰尼龟
 	TriMesh* squirtle = new TriMesh();
@@ -177,7 +157,7 @@ void init()
 
 	// 设置物体的旋转位移
 	squirtle->setTranslation(glm::vec3(0.0, 0.3, 0.0));
-	squirtle->setRotation(glm::vec3(0.0, 0.0, 0.0));
+	squirtle->setRotation(glm::vec3(0.0, 180.0, 0.0));
 	squirtle->setScale(glm::vec3(1.0, 1.0, 1.0));
 
 	// 设置材质
@@ -192,12 +172,12 @@ void init()
 
 	plane->setNormalize(false);
 	// 创建正方形平面，给它一个其他颜色
-	plane->generateTriangle(glm::vec3(0.0, 0, 0.0));
+	plane->generateSquare(glm::vec3(0.0, 0, 0.0));
 	plane->setTranslation(glm::vec3(0, 0, 0));
 	plane->setRotation(glm::vec3(-90.0, 0, 0));
-	plane->setScale(glm::vec3(3, 3, 3));
+	plane->setScale(glm::vec3(2, 2, 2));
 
-	painter->addMesh(plane, "plane", "./assets/RedCarpet.jpg", "./shaders/plane_vs.glsl", "./shaders/plane_fs.glsl");
+	painter->addMesh(plane, "plane", "./assets/magic_carpet.jpg", "./shaders/plane_vs.glsl", "./shaders/plane_fs.glsl");
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
@@ -316,12 +296,23 @@ int main(int argc, char** argv)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
 
-	// 配置窗口属性
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "2019152091", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "2019152091陆和淇期末大作业", NULL, NULL);
+
+	// 设置窗口属性
+/*	void glfwSetWindowMonitor	(	GLFWwindow * 	window,
+					GLFWmonitor * 	monitor,
+					int 	xpos,
+					int 	ypos,
+					int 	width,
+					int 	height,
+					int 	refreshRate 
+					)	*/	
+	glfwSetWindowMonitor(window, NULL, 0, 0, SCR_WIDTH, SCR_HEIGHT, GLFW_DONT_CARE);
+
+	//全屏--无窗口
+	//GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "2019152091", glfwGetPrimaryMonitor(), NULL);
+
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;

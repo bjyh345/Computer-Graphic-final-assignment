@@ -17,8 +17,8 @@ enum Camera_Movement {
 
 
 // ´°¿Ú´óÐ¡
-const GLuint SCR_WIDTH = 1000;
-const GLuint SCR_HEIGHT = 800;
+const GLuint SCR_WIDTH = 1920;
+const GLuint SCR_HEIGHT = 1080;
 
 
 // Default camera values
