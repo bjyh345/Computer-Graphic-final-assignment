@@ -13,6 +13,7 @@
 // 三角面片中的顶点序列
 typedef struct vIndex {
 	unsigned int x, y, z;
+	vIndex() {}
 	vIndex(int ix, int iy, int iz) : x(ix), y(iy), z(iz) {}
 } vec3i;
 

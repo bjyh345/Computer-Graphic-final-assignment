@@ -51,6 +51,9 @@ struct Robot
 	float HEAD_HEIGHT = 1.8 / 5;
 	float HEAD_WIDTH = 1.8 / 5;
 
+	float WEAPON_HEIGHT = 0.1;
+	float WEAPON_WIDTH = 0.1;
+
 	// 关节角和菜单选项值
 	enum {
 		Torso,			// 躯干
@@ -63,20 +66,22 @@ struct Robot
 		RightLowerLeg,	// 右小腿
 		LeftUpperLeg,	// 左大腿
 		LeftLowerLeg,	// 左小腿
+		Weapon	//武器
 	};
 
 	// 关节角大小
-	GLfloat theta[10] = {
+	GLfloat theta[11] = {
 		0.0,    // Torso
 		0.0,    // Head
 		0.0,    // RightUpperArm
 		0.0,    // RightLowerArm
 		0.0,    // LeftUpperArm
-		0.0,    // LeftLowerArm
+		-90.0,    // LeftLowerArm
 		0.0,    // RightUpperLeg
 		0.0,    // RightLowerLeg
 		0.0,    // LeftUpperLeg
-		0.0     // LeftLowerLeg
+		0.0,     // LeftLowerLeg
+		-90.0		//weapon
 	};
 };
 Robot robot;
@@ -95,6 +100,7 @@ TriMesh* RightUpperLeg = new TriMesh();
 TriMesh* RightLowerLeg = new TriMesh();
 TriMesh* LeftUpperLeg = new TriMesh();
 TriMesh* LeftLowerLeg = new TriMesh();
+TriMesh* weapon = new TriMesh();
 
 
 //初始让鼠标位于窗口中心
@@ -356,6 +362,17 @@ void init()
 	painter->addMesh(LeftLowerLeg, "LeftLowerLeg", "./assets/torso.jpg", vshader, fshader);
 
 
+	weapon->isRobot = true;
+	weapon->generateCube();
+
+	// 设置材质
+	weapon->setAmbient(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 环境光
+	weapon->setDiffuse(glm::vec4(0.7, 0.7, 0.7, 1.0)); // 漫反射
+	weapon->setSpecular(glm::vec4(0.2, 0.2, 0.2, 1.0)); // 镜面反射
+	weapon->setShininess(1.0); //高光系数
+
+	painter->addMesh(weapon, "weapon", "./assets/blue.png", vshader, fshader);
+
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
@@ -493,6 +510,19 @@ void right_lower_leg(glm::mat4 modelMatrix)
 	painter->drawMesh(RightLowerLeg, painter->opengl_objects[11], light, camera);
 }
 
+// 武器
+void drawWeapon(glm::mat4 modelMatrix)
+{
+	// 本节点局部变换矩阵
+	glm::mat4 instance = glm::mat4(1.0);
+	instance = glm::translate(instance, glm::vec3(0.0, -0.4 * robot.LOWER_ARM_HEIGHT, 0.0));
+	instance = glm::scale(instance, glm::vec3(robot.WEAPON_WIDTH, robot.WEAPON_HEIGHT, robot.WEAPON_WIDTH));
+
+	weapon->modelMatrix = modelMatrix * instance;
+	// 乘以来自父物体的模型变换矩阵，绘制当前物体
+	painter->drawMesh(weapon, painter->opengl_objects[12], light, camera);
+}
+
 
 void display()
 {
@@ -521,53 +551,61 @@ void display()
 
 	// =========== 左臂 ===========
 	mstack.push(modelMatrix);   // 保存躯干变换矩阵
-	// 左大臂（这里我们希望机器人的左大臂只绕Z轴旋转，所以只计算了RotateZ，后面同理）
+	// 左大臂（这里我们希望机器人的左大臂只绕X轴旋转，所以只计算了RotateX，后面同理）
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(-robot.UPPER_ARM_WIDTH, 0.9 * robot.TORSO_HEIGHT, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftUpperArm]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftUpperArm]), glm::vec3(1.0, 0.0, 0.0));
 	left_upper_arm(modelMatrix);
 
 	// @TODO: 左小臂
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0, -robot.LOWER_ARM_HEIGHT, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftLowerArm]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftLowerArm]), glm::vec3(1.0, 0.0, 0.0));
 	left_lower_arm(modelMatrix);
+
+	// 武器-- 因为初始转了-90度，y轴变成z轴，z轴变成y轴
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(0, -robot.LOWER_ARM_HEIGHT * 0.8+0.02, -robot.LOWER_ARM_HEIGHT * 0.4));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.Weapon]), glm::vec3(1.0, 0.0, 0.0));
+	drawWeapon(modelMatrix);
+
+
 	modelMatrix = mstack.pop(); // 恢复躯干变换矩阵
 
 	// =========== 右臂 ===========
 	mstack.push(modelMatrix);   // 保存躯干变换矩阵
 	// @TODO: 右大臂
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(robot.UPPER_ARM_WIDTH, 0.9 * robot.TORSO_HEIGHT, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightUpperArm]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightUpperArm]), glm::vec3(1.0, 0.0, 0.0));
 	right_upper_arm(modelMatrix);
 
 	// @TODO: 右小臂
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0, -robot.LOWER_ARM_HEIGHT, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightLowerArm]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightLowerArm]), glm::vec3(1.0, 0.0, 0.0));
 	right_lower_arm(modelMatrix);
+
 	modelMatrix = mstack.pop(); // 恢复躯干变换矩阵
 
 	// =========== 左腿 ===========
 	mstack.push(modelMatrix);   // 保存躯干变换矩阵
 	// @TODO: 左大腿
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(-robot.UPPER_LEG_WIDTH / 2, 0.7* robot.UPPER_LEG_HEIGHT, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftUpperLeg]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(-robot.UPPER_LEG_WIDTH / 2, 0.7 * robot.UPPER_LEG_HEIGHT, 0.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftUpperLeg]), glm::vec3(1.0, 0.0, 0.0));
 	left_upper_leg(modelMatrix);
 
 	// @TODO: 左小腿
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0, -robot.LOWER_LEG_HEIGHT / 1.2, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftLowerLeg]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.LeftLowerLeg]), glm::vec3(1.0, 0.0, 0.0));
 	left_lower_leg(modelMatrix);
 	modelMatrix = mstack.pop(); // 恢复躯干变换矩阵
 
 	// =========== 右腿 ===========
 	mstack.push(modelMatrix);   // 保存躯干变换矩阵
 	// @TODO: 右大腿
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(robot.UPPER_LEG_WIDTH / 2, 0.7* robot.UPPER_LEG_HEIGHT, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightUpperLeg]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(robot.UPPER_LEG_WIDTH / 2, 0.7 * robot.UPPER_LEG_HEIGHT, 0.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightUpperLeg]), glm::vec3(1.0, 0.0, 0.0));
 	right_upper_leg(modelMatrix);
 
 	// @TODO: 右小腿
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0, -robot.LOWER_LEG_HEIGHT / 1.2, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightLowerLeg]), glm::vec3(0.0, 0.0, 1.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(robot.theta[robot.RightLowerLeg]), glm::vec3(1.0, 0.0, 0.0));
 	right_lower_leg(modelMatrix);
 
 	modelMatrix = mstack.pop(); // 恢复躯干变换矩阵
@@ -599,6 +637,27 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		{
 		case GLFW_KEY_ESCAPE: exit(EXIT_SUCCESS); break;
 		case GLFW_KEY_H: printHelp(); break;
+		case GLFW_KEY_1: Selected_mesh = robot.Torso; break;
+		case GLFW_KEY_2: Selected_mesh = robot.Head; break;
+		case GLFW_KEY_3: Selected_mesh = robot.RightUpperArm; break;
+		case GLFW_KEY_4: Selected_mesh = robot.RightLowerArm; break;
+		case GLFW_KEY_5: Selected_mesh = robot.LeftUpperArm; break;
+		case GLFW_KEY_6: Selected_mesh = robot.LeftLowerArm; break;
+		case GLFW_KEY_7: Selected_mesh = robot.RightUpperLeg; break;
+		case GLFW_KEY_8: Selected_mesh = robot.RightLowerLeg; break;
+		case GLFW_KEY_9: Selected_mesh = robot.LeftUpperLeg; break;
+		case GLFW_KEY_0: Selected_mesh = robot.LeftLowerLeg; break;
+			// 通过按键旋转
+		case GLFW_KEY_J:
+			robot.theta[Selected_mesh] += 5.0;
+			if (robot.theta[Selected_mesh] > 360.0)
+				robot.theta[Selected_mesh] -= 360.0;
+			break;
+		case GLFW_KEY_K:
+			robot.theta[Selected_mesh] -= 5.0;
+			if (robot.theta[Selected_mesh] < 0.0)
+				robot.theta[Selected_mesh] += 360.0;
+			break;
 		default:
 			camera->keyboard(key, action, mode);
 			break;
@@ -694,7 +753,7 @@ int main(int argc, char** argv)
 					int 	height,
 					int 	refreshRate
 					)	*/
-	glfwSetWindowMonitor(window, NULL, 0, 0, SCR_WIDTH, SCR_HEIGHT, GLFW_DONT_CARE);
+	glfwSetWindowMonitor(window, NULL, 100, 100, SCR_WIDTH, SCR_HEIGHT, GLFW_DONT_CARE);
 
 	//全屏--无窗口
 	//GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "2019152091", glfwGetPrimaryMonitor(), NULL);

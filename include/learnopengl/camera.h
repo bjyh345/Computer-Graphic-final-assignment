@@ -17,9 +17,11 @@ enum Camera_Movement {
 
 
 // ´°¿Ú´óÐ¡
-const GLuint SCR_WIDTH = 1920;
-const GLuint SCR_HEIGHT = 1080;
+//const GLuint SCR_WIDTH = 1920;
+//const GLuint SCR_HEIGHT = 1080;
 
+const GLuint SCR_WIDTH = 1000;
+const GLuint SCR_HEIGHT = 800;
 
 // Default camera values
 const float YAW = -90.0f;
@@ -108,6 +110,7 @@ public:
 			Zoom = ZOOM;
 			Position = glm::vec3(0.3f, 0.5f, 5.0f);
 		}
+
 	}
 
 	// processes input received from any keyboard-like input system. Accepts 
