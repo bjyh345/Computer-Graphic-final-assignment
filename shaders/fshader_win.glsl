@@ -78,7 +78,7 @@ void main()
 		 } 
 
 		fColor = texture2D( texture, texCoord );
-		fColor *= 0.5;
+		fColor *= 1.0;
 
 		// 合并三个分量的颜色，修正透明度
 		fColor += I_a + I_d + I_s;

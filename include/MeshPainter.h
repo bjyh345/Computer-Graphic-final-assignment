@@ -75,10 +75,10 @@ public:
 	// 清空数据
 	void cleanMeshes();
 
+	std::vector<openGLObject> opengl_objects;
 private:
 	std::vector<std::string> mesh_names;
 	std::vector<TriMesh*> meshes;
-	std::vector<openGLObject> opengl_objects;
 };
 
 #endif

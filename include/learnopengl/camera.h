@@ -98,6 +98,7 @@ public:
 		updateCamera();
 	}
 
+	// 按空格回到初始位置
 	void keyboard(int key, int action, int mode)
 	{
 		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && mode == 0x0000)
@@ -105,6 +106,7 @@ public:
 			Yaw = YAW;
 			Pitch = PITCH;
 			Zoom = ZOOM;
+			Position = glm::vec3(0.3f, 0.5f, 5.0f);
 		}
 	}
 

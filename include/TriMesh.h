@@ -20,6 +20,10 @@ typedef struct vIndex {
 class TriMesh
 {
 public:
+	bool isRobot = false;
+	bool isPlane = false;
+	glm::mat4 modelMatrix;
+
 	TriMesh();
 	~TriMesh();
 
